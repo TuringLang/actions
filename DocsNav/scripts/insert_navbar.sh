@@ -83,7 +83,7 @@ find "$HTML_DIR" -type f -name "*.html" | while read -r file; do
 
     # Insert the new navbar right after the first <body> tag using awk
     awk -v nav="$NAVBAR_HTML" '
-    /<body>/ {
+    /<body[^>]*>/ {
         sub(/(<body[^>]*>)/, "&\n" nav);
     }
     { print }
