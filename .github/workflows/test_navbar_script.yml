@@ -1,0 +1,40 @@
+# This workflow runs the insert_navbar script on several test HTML inputs,
+# making sure that the output is as expected.
+
+name: Test Navbar Script
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test-html-diff:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy script to GHA scratch directory
+        run: cp DocsNav/scripts/insert_navbar.sh .github/workflows/test_navbar_script
+
+      - name: Compare all test inputs against out.html
+        working-directory: .github/workflows/test_navbar_script
+        run: |
+          # Make script executable
+          chmod +x ./insert_navbar.sh
+          # Run script on all files in `ins_html` directory
+          ./insert_navbar.sh ./ins_html ./test_navbar.html
+          # Expected output
+          OUT="expected_out.html"
+          # Check if all files in `ins_html` match the expected output
+          for file in ins_html/*; do
+            if diff <(tr -d '[:space:]' < "$file") <(tr -d '[:space:]' < $OUT); then
+              echo "✅ $file matches $OUT (ignoring whitespace)"
+            else
+              echo "❌ $file differs from $OUT"
+              exit 1  # Fail the job if any file is different
+            fi
+          done
