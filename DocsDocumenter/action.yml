@@ -42,6 +42,7 @@ runs:
       shell: julia --color=yes --project=${{ inputs.doc-path }} {0}
       run: |
         using Pkg
+        Pkg.add("HTTP")
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
 

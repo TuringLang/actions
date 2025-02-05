@@ -5,7 +5,7 @@ inputs:
   doc-path:
     description: 'Path to the Documenter.jl output'
     required: false
-    # Most julia projects have it here
+    # Most Julia projects have it here
     default: 'docs/build'
   navbar-url:
     description: 'URL or local path of the navbar HTML to be inserted.'
@@ -22,6 +22,5 @@ runs:
     - name: Update Navbar
       working-directory: ${{ inputs.doc-path }}
       run: |
-        chmod +x ${{ github.action_path }}/scripts/insert_navbar.sh
-        ${{ github.action_path }}/scripts/insert_navbar.sh . "${{ inputs.navbar-url }}" --exclude "${{ inputs.exclude-paths }}"
+        julia ${{ github.action_path }}/scripts/insert_navbar.jl . "${{ inputs.navbar-url }}" --exclude "${{ inputs.exclude-paths }}"
       shell: bash
