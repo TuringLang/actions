@@ -16,6 +16,7 @@ If your `docs/make.jl` file contains a call to `deploydocs()`, it is not a big d
 
 | Parameter | Description | Default |
 | --- | --- | --- |
+| `pkg-path` | Path to the package root. If empty, defaults to the current working directory. | `""` |
 | `doc-path` | Path to the documentation root | `docs` (following Documenter.jl conventions) |
 | `doc-make-path` | Path to the `make.jl` file | `docs/make.jl` (following Documenter.jl conventions) |
 | `doc-build-path` | Path to the built HTML documentation | `docs/build` (following Documenter.jl conventions) |
