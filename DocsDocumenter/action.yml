@@ -19,6 +19,10 @@ inputs:
     description: 'Path to the built HTML documentation'
     required: false
     default: 'docs/build'
+  dirname:
+    description: 'Subdirectory in gh-pages where the documentation should be deployed'
+    required: false
+    default: ''
   exclude-paths:
     # GitHub Actions doesn't allow array inputs, so the most robust way to
     # handle this is to use a JSON string. DocsNav then parses this using jq.
@@ -29,10 +33,6 @@ inputs:
     description: 'Whether to deploy the docs to the gh-pages branch'
     required: false
     default: 'true'
-  dirname:
-    description: 'Subdirectory in gh-pages where the documentation should be deployed'
-    required: false
-    default: ''
 
 runs:
   using: "composite"
