@@ -57,7 +57,7 @@ runs:
       shell: julia --color=yes --project=${{ inputs.doc-path }} {0}
       run: |
         using Pkg
-        pkg_path = "{{ inputs.pkg-path }}"
+        pkg_path = ENV["INPUT_PKG_PATH"]
         if pkg_path == ""
           # Fallback: assume the package is in the current working directory
           Pkg.develop(PackageSpec(path=pwd()))
