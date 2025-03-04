@@ -29,6 +29,10 @@ inputs:
     description: 'Whether to deploy the docs to the gh-pages branch'
     required: false
     default: 'true'
+  dirname:
+    description: 'Subdirectory in gh-pages where the documentation should be deployed'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -84,7 +88,7 @@ runs:
       # Also, `root` must be an absolute path (hence the call to `pwd()`)
       run: |
         using Documenter
-        deploydocs(; root=pwd(), repo="github.com/${{ github.repository }}.git", push_preview=true)
+        deploydocs(; root=pwd(), repo="github.com/${{ github.repository }}.git", dirname="${{ inputs.dirname }}", push_preview=true)
       env:
         GITHUB_TOKEN: ${{ github.token }}
         JULIA_DEBUG: Documenter
