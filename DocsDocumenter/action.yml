@@ -13,9 +13,9 @@ inputs:
     required: false
     default: ''
   additional_pkg_paths:
-    description: 'JSON array of additional package paths to be dev-ed alongside the main package. For multi-package repos.'
+    description: 'Additional package paths to be dev-ed alongside the main package (one path per line). For multi-package repos.'
     required: false
-    default: '[]'
+    default: ''
   doc-path:
     description: 'Path to the Documenter.jl source folder'
     required: false
@@ -64,7 +64,6 @@ runs:
         INPUT_ADDITIONAL_PKG_PATHS: ${{ inputs.additional_pkg_paths }}
       run: |
         using Pkg
-        using JSON
 
         # Main package development
         pkg_path = ENV["INPUT_PKG_PATH"]
@@ -76,12 +75,10 @@ runs:
 
         # Additional packages development (for multi-package repos)
         additional_pkg_paths_json = ENV["INPUT_ADDITIONAL_PKG_PATHS"]
-        if additional_pkg_paths_json != "[]"
-          additional_pkg_paths = JSON.parse(additional_pkg_paths_json)
-          for path in additional_pkg_paths
-            println("Developing additional package from: ", path)
-            Pkg.develop(PackageSpec(path=path))
-          end
+        for path in split(additional_pkg_paths, "\n")
+          path = strip(path)
+          println("Developing additional package from: ", path)
+          Pkg.develop(PackageSpec(path=path))
         end
 
         Pkg.instantiate()
