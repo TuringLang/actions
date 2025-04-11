@@ -21,16 +21,17 @@ If your `docs/make.jl` file contains a call to `deploydocs()`, it is not a big d
 
 ### Parameters
 
-| Parameter | Description | Default |
-| --- | --- | --- |
-| `pkg_path` | Path to the package root. If empty, defaults to the current working directory. | `""` |
-| `doc-path` | Path to the documentation root | `docs` (following Documenter.jl conventions) |
-| `doc-make-path` | Path to the `make.jl` file | `docs/make.jl` (following Documenter.jl conventions) |
-| `doc-build-path` | Path to the built HTML documentation | `docs/build` (following Documenter.jl conventions) |
-| `dirname` | Subdirectory in gh-pages where the documentation should be deployed | `""` |
-| `julia-version` | Julia version to use | `'1'` |
-| `exclude-paths` | JSON array of filepath patterns to exclude from navbar insertion | `"[]"` |
-| `deploy` | Whether to deploy to the `gh-pages` branch or not | `true` |
+| Parameter              | Description                                                                                                    | Default                                              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `pkg_path`             | Path to the package root. If empty, defaults to the current working directory.                                 | `""`                                                 |
+| `additional_pkg_paths` | Additional package paths to be dev-ed alongside the main package (one path per line). For multi-package repos. | `""`                                                 |
+| `doc-path`             | Path to the documentation root                                                                                 | `docs` (following Documenter.jl conventions)         |
+| `doc-make-path`        | Path to the `make.jl` file                                                                                     | `docs/make.jl` (following Documenter.jl conventions) |
+| `doc-build-path`       | Path to the built HTML documentation                                                                           | `docs/build` (following Documenter.jl conventions)   |
+| `dirname`              | Subdirectory in gh-pages where the documentation should be deployed                                            | `""`                                                 |
+| `julia-version`        | Julia version to use                                                                                           | `'1'`                                                |
+| `exclude-paths`        | JSON array of filepath patterns to exclude from navbar insertion                                               | `"[]"`                                               |
+| `deploy`               | Whether to deploy to the `gh-pages` branch or not                                                              | `true`                                               |
 
 ### Example usage
 
