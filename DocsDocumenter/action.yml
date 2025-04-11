@@ -12,6 +12,10 @@ inputs:
     description: 'Path to the package root. If empty, defaults to the current working directory.'
     required: false
     default: ''
+  additional_pkg_paths:
+    description: 'JSON array of additional package paths to be dev-ed alongside the main package. For multi-package repos.'
+    required: false
+    default: '[]'
   doc-path:
     description: 'Path to the Documenter.jl source folder'
     required: false
@@ -40,7 +44,7 @@ inputs:
     default: 'true'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -57,14 +61,29 @@ runs:
       shell: julia --color=yes --project=${{ inputs.doc-path }} {0}
       env:
         INPUT_PKG_PATH: ${{ inputs.pkg_path }}
+        INPUT_ADDITIONAL_PKG_PATHS: ${{ inputs.additional_pkg_paths }}
       run: |
         using Pkg
+        using JSON
+
+        # Main package development
         pkg_path = ENV["INPUT_PKG_PATH"]
         if pkg_path == ""
           Pkg.develop(PackageSpec(path=pwd()))
         else
           Pkg.develop(PackageSpec(path=pkg_path))
         end
+
+        # Additional packages development (for multi-package repos)
+        additional_pkg_paths_json = ENV["INPUT_ADDITIONAL_PKG_PATHS"]
+        if additional_pkg_paths_json != "[]"
+          additional_pkg_paths = JSON.parse(additional_pkg_paths_json)
+          for path in additional_pkg_paths
+            println("Developing additional package from: ", path)
+            Pkg.develop(PackageSpec(path=path))
+          end
+        end
+
         Pkg.instantiate()
 
     - name: Build docs
