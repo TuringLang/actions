@@ -122,3 +122,29 @@ runs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
         JULIA_DEBUG: Documenter
+        
+    - name: Set docs subdirectory path
+      if: ${{ github.event_name == 'pull_request' && inputs.deploy == 'true' }}
+      shell: bash
+      run: echo "DOCS_SUBDIR=${{ inputs.dirname != '' && format('/{0}', inputs.dirname) || '' }}" >> $GITHUB_ENV
+
+    - name: Check for Existing Docs Preview Comment
+      if: ${{ github.event_name == 'pull_request' && inputs.deploy == 'true' }}
+      uses: peter-evans/find-comment@v3
+      id: existing_docs_preview_comment
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: github-actions[bot]
+        body-includes: "docs-preview-url-${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }}"
+
+    - name: Create or Update Documentation Preview Comment
+      if: ${{ github.event_name == 'pull_request' && inputs.deploy == 'true' }}
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-id: ${{ steps.existing_docs_preview_comment.outputs.comment-id }}
+        edit-mode: replace
+        body: |
+          <!-- docs-preview-url-${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }} -->
+          ${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }} documentation for PR #${{ github.event.pull_request.number }} is available at:
+          https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }}/previews/PR${{ github.event.pull_request.number }}/
