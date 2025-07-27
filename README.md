@@ -26,6 +26,7 @@ If your `docs/make.jl` file contains a call to `deploydocs()`, it is not a big d
 | `pkg_path`             | Path to the package root. If empty, defaults to the current working directory.                                 | `""`                                                 |
 | `additional_pkg_paths` | Additional package paths to be dev-ed alongside the main package (one path per line). For multi-package repos. | `""`                                                 |
 | `doc-path`             | Path to the documentation root                                                                                 | `docs` (following Documenter.jl conventions)         |
+| `add-navbar`           | Whether to include the TuringLang navbar                                                                       | `true`                                               |
 | `doc-make-path`        | Path to the `make.jl` file                                                                                     | `docs/make.jl` (following Documenter.jl conventions) |
 | `doc-build-path`       | Path to the built HTML documentation                                                                           | `docs/build` (following Documenter.jl conventions)   |
 | `dirname`              | Subdirectory in gh-pages where the documentation should be deployed                                            | `""`                                                 |

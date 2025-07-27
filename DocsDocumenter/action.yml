@@ -7,6 +7,10 @@ inputs:
     description: 'Julia version to use'
     required: false
     default: '1'
+  add-navbar:
+    description: 'Whether to add the TuringLang navbar to the documentation'
+    required: false
+    default: 'true'
   # Keep this input with underscore to avoid potential issues
   pkg_path:
     description: 'Path to the package root. If empty, defaults to the current working directory.'
@@ -103,6 +107,7 @@ runs:
       run: ln -s /home/runner/work/_actions/$GH_ACTION_REPO/$GH_ACTION_REF/  /home/runner/work/_actions/current
 
     - name: Insert navbar
+      if: ${{ inputs.add-navbar == 'true' }}
       # Using the path symlinked in the previous step
       uses: ./../../_actions/current/DocsNav
       with:
