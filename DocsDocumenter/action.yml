@@ -36,6 +36,10 @@ inputs:
     description: 'Subdirectory in gh-pages where the documentation should be deployed'
     required: false
     default: ''
+  tag_prefix:
+    description: 'Prefix for the git tag used for versioning (useful for monorepo packages)'
+    required: false
+    default: ''
   exclude-paths:
     # GitHub Actions doesn't allow array inputs, so the most robust way to
     # handle this is to use a JSON string. DocsNav then parses this using jq.
@@ -123,7 +127,7 @@ runs:
       # Also, `root` must be an absolute path (hence the call to `pwd()`)
       run: |
         using Documenter
-        deploydocs(; root=pwd(), repo="github.com/${{ github.repository }}.git", dirname="${{ inputs.dirname }}", push_preview=true)
+        deploydocs(; root=pwd(), repo="github.com/${{ github.repository }}.git", dirname="${{ inputs.dirname }}", tag_prefix="${{ inputs.tag_prefix }}", push_preview=true)
       env:
         GITHUB_TOKEN: ${{ github.token }}
         JULIA_DEBUG: Documenter
