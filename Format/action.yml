@@ -32,7 +32,7 @@ runs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
       shell: bash
 
-    - uses: reviewdog/action-suggester@v1
+    - uses: reviewdog/action-suggester@v1.22
       if: ${{ inputs.suggest-changes && github.event_name == 'pull_request' }}
       with:
         tool_name: JuliaFormatter v${{ steps.get-version.outputs.version }}
