@@ -1,0 +1,12 @@
+name: 'Build combined search index'
+author: 'TuringLang'
+description: 'Fetch documentation search indices from multiple repositories and combine them into a single search index for improved search functionality.'
+
+runs:
+  using: "composite"
+  steps:
+      - uses: actions/checkout@v6
+
+      # NOTE: This action assumes that you already have Julia set up!
+      - name: Run script
+        run: julia --color=yes ${{ github.action)path}}/scripts/search.jl

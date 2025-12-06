@@ -89,3 +89,18 @@ None.
 ### Example usage
 
 See [`example_workflows/PRAssign.yml`](https://github.com/TuringLang/actions/blob/main/example_workflows/PRAssign.yml) for an example workflow.
+
+## Search
+
+Build a combined Quarto search index that includes entries both from the main TuringLang docs site, as well as the docs of individual packages.
+
+### Parameters
+
+None.
+
+### Example usage
+
+This action is only meant for two repos: `TuringLang/docs` and `TuringLang/turinglang.github.io`.
+Please see the publish workflow files in those repos for example usage.
+
+Note that this action assumes that Julia has been installed in an earlier step of the workflow.
