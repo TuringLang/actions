@@ -10,4 +10,4 @@ runs:
       # NOTE: This action assumes that you already have Julia set up!
       - name: Run script
         shell: bash
-        run: julia --color=yes ${{ github.action_path}}/scripts/search.jl
+        run: julia --color=yes --project=${{ github.action_path }}/scripts ${{ github.action_path}}/scripts/search.jl
