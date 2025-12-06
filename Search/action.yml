@@ -5,8 +5,6 @@ description: 'Fetch documentation search indices from multiple repositories and 
 runs:
   using: "composite"
   steps:
-      - uses: actions/checkout@v6
-
       # NOTE: This action assumes that you already have Julia set up!
       - name: Run script
         shell: bash
