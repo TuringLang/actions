@@ -97,6 +97,7 @@ function get_docs_quarto_search_index()
     GITHUB_REPO = get(ENV, "GITHUB_REPOSITORY", nothing)
     BUILT_DOCS_INDEX = "https://raw.githubusercontent.com/TuringLang/docs/refs/heads/gh-pages/search_original.json"
     search_index = if GITHUB_REPO === nothing
+        @info "Not running on GitHub Actions; will attempt to use local search index first and fallback to fetching from GitHub..."
         if isfile(LOCAL_QUARTO_DOCS_INDEX)
             @info "Using local search index..."
             JSON.parsefile(LOCAL_QUARTO_DOCS_INDEX, Vector{QuartoSearchEntry})
@@ -106,14 +107,14 @@ function get_docs_quarto_search_index()
             JSON.parse(String(resp.body), Vector{QuartoSearchEntry})
         end
     elseif GITHUB_REPO == "TuringLang/docs"
+        @info "Running on GitHub Actions for TuringLang/docs repo; will use local search index..."
         if isfile(LOCAL_QUARTO_DOCS_INDEX)
-            @info "Running on GitHub Actions, using local search index..."
             JSON.parsefile(LOCAL_QUARTO_DOCS_INDEX, Vector{QuartoSearchEntry})
         else
             error("Local search index not found; make sure to run this from the repo root after building the docs.")
         end
     elseif GITHUB_REPO == "TuringLang/turinglang.github.io"
-        @info "Running on GitHub Actions for turinglang.github.io, downloading search index from docs repo..."
+        @info "Running on GitHub Actions for TuringLang/turinglang.github.io, downloading search index from docs repo..."
         resp = HTTP.get(BUILT_DOCS_INDEX)
         JSON.parse(String(resp.body), Vector{QuartoSearchEntry})
     else
