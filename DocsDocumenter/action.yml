@@ -40,6 +40,10 @@ inputs:
     description: 'Prefix for the git tag used for versioning (useful for monorepo packages)'
     required: false
     default: ''
+  navbar-url:
+    description: 'URL or local path of the navbar HTML to insert. Defaults to TuringNavbar.html when empty.'
+    required: false
+    default: ''
   exclude-paths:
     # GitHub Actions doesn't allow array inputs, so the most robust way to
     # handle this is to use a JSON string. DocsNav then parses this using jq.
@@ -116,7 +120,7 @@ runs:
       uses: ./../../_actions/current/DocsNav
       with:
         doc-path: ${{ inputs.doc-build-path }}
-        navbar-url: ${{ github.action_path }}/../DocsNav/scripts/TuringNavbar.html
+        navbar-url: ${{ inputs.navbar-url != '' && inputs.navbar-url || format('{0}/../DocsNav/scripts/TuringNavbar.html', github.action_path) }}
         exclude-paths: ${{ inputs.exclude-paths }}
 
     - name: Deploy docs to gh-pages branch
