@@ -54,6 +54,18 @@ inputs:
     description: 'Whether to deploy the docs to the gh-pages branch'
     required: false
     default: 'true'
+  post-preview-comment:
+    description: 'Whether to post a pull request preview comment after deployment'
+    required: false
+    default: 'true'
+
+outputs:
+  preview_url:
+    description: 'Preview URL for pull request docs previews'
+    value: ${{ steps.docs_preview_metadata.outputs.preview_url }}
+  preview_comment_body:
+    description: 'Comment body that would be posted for the pull request docs preview'
+    value: ${{ steps.docs_preview_metadata.outputs.preview_comment_body }}
 
 runs:
   using: 'composite'
@@ -136,27 +148,35 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         JULIA_DEBUG: Documenter
         
-    - name: Set docs subdirectory path
+    - name: Compute docs preview metadata
       if: ${{ github.event_name == 'pull_request' && inputs.deploy == 'true' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name }}
+      id: docs_preview_metadata
       shell: bash
-      run: echo "DOCS_SUBDIR=${{ inputs.dirname != '' && format('/{0}', inputs.dirname) || '' }}" >> $GITHUB_ENV
+      run: |
+        docs_subdir="${{ inputs.dirname != '' && format('/{0}', inputs.dirname) || '' }}"
+        preview_url="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}${docs_subdir}/previews/PR${{ github.event.pull_request.number }}/"
+        {
+          echo "docs_subdir=${docs_subdir}"
+          echo "preview_url=${preview_url}"
+          echo "preview_comment_body<<EOF"
+          echo "<!-- docs-preview-url-${{ github.event.repository.name }}${docs_subdir} -->"
+          echo "${{ github.event.repository.name }}${docs_subdir} documentation for PR #${{ github.event.pull_request.number }} is available at:"
+          echo "${preview_url}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Check for Existing Docs Preview Comment
-      if: ${{ github.event_name == 'pull_request' && inputs.deploy == 'true' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name }}
+      if: ${{ github.event_name == 'pull_request' && inputs.deploy == 'true' && inputs.post-preview-comment == 'true' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name }}
       uses: peter-evans/find-comment@v3
       id: existing_docs_preview_comment
       with:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: github-actions[bot]
-        body-includes: "docs-preview-url-${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }}"
+        body-includes: "docs-preview-url-${{ github.event.repository.name }}${{ steps.docs_preview_metadata.outputs.docs_subdir }}"
 
     - name: Create Documentation Preview Comment (if needed)
-      if: ${{ steps.existing_docs_preview_comment.outputs.comment-id == '' && github.event_name == 'pull_request' && inputs.deploy == 'true' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name }}
+      if: ${{ steps.existing_docs_preview_comment.outputs.comment-id == '' && github.event_name == 'pull_request' && inputs.deploy == 'true' && inputs.post-preview-comment == 'true' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name }}
       uses: peter-evans/create-or-update-comment@v4
       with:
         issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          <!-- docs-preview-url-${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }} -->
-          ${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }} documentation for PR #${{ github.event.pull_request.number }} is available at:
-          https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}${{ env.DOCS_SUBDIR }}/previews/PR${{ github.event.pull_request.number }}/
-          
+        body: ${{ steps.docs_preview_metadata.outputs.preview_comment_body }}
