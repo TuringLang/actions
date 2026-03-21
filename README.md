@@ -30,9 +30,19 @@ If your `docs/make.jl` file contains a call to `deploydocs()`, it is not a big d
 | `doc-make-path`        | Path to the `make.jl` file                                                                                     | `docs/make.jl` (following Documenter.jl conventions) |
 | `doc-build-path`       | Path to the built HTML documentation                                                                           | `docs/build` (following Documenter.jl conventions)   |
 | `dirname`              | Subdirectory in gh-pages where the documentation should be deployed                                            | `""`                                                 |
+| `tag_prefix`           | Prefix for the git tag used for versioning, useful for monorepo packages                                       | `""`                                                 |
+| `navbar-url`           | URL or local path of the navbar HTML to insert                                                                 | `""`                                                 |
 | `julia-version`        | Julia version to use                                                                                           | `'1'`                                                |
 | `exclude-paths`        | JSON array of filepath patterns to exclude from navbar insertion                                               | `"[]"`                                               |
 | `deploy`               | Whether to deploy to the `gh-pages` branch or not                                                              | `true`                                               |
+| `post-preview-comment` | Whether to post the sticky pull request preview comment after deployment                                       | `true`                                               |
+
+### Outputs
+
+| Output | Description |
+| --- | --- |
+| `preview_url` | Preview URL for pull request docs previews |
+| `preview_comment_body` | Comment body used for the pull request docs preview |
 
 ### Example usage
 
