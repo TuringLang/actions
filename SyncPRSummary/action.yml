@@ -114,7 +114,7 @@ runs:
 
           const managedBlock = [
             START_MARKER,
-            "## Automated PR Summary",
+            "## CI Summary — GitHub Actions",
             "",
             ...sections,
             END_MARKER,
