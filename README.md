@@ -8,6 +8,7 @@ Namely, these are:
 - [DocsNav](#docsnav)
 - [Format](#format)
 - [PRAssign](#prassign)
+- [SyncPRSummary](#syncprsummary)
 
 ----------
 
@@ -114,3 +115,51 @@ This action is only meant for two repos: `TuringLang/docs` and `TuringLang/turin
 Please see the publish workflow files in those repos for example usage.
 
 Note that this action assumes that Julia has been installed in an earlier step of the workflow.
+
+----------------
+
+## SyncPRSummary
+
+Maintains a single managed block in the PR body that consolidates CI outputs — currently **Documentation Preview** and **Performance** sections. Each section is populated from an explicit input, or falls back to scanning existing bot comments for a matching marker, or shows a "pending" placeholder while CI is still running.
+
+Works in combination with `DocsDocumenter` (set `post-preview-comment: 'false'` and pass its `preview_url` output as `docs-content`) and any benchmarking step that writes results to a file (pass the file content as `perf-content`).
+
+### Parameters
+
+| Parameter | Description | Default |
+| --- | --- | --- |
+| `docs-content` | Documentation preview content to inject into the PR summary | `""` |
+| `perf-content` | Performance summary content to inject into the PR summary | `""` |
+
+Both inputs are optional. Any section whose input is empty falls back to the latest matching bot comment already on the PR, then to a "Pending" placeholder.
+
+### Example usage
+
+```yaml
+- name: Build and deploy docs
+  id: docsdocumenter
+  uses: TuringLang/actions/DocsDocumenter@main
+  with:
+    julia-version: '1.11'
+    post-preview-comment: 'false'   # let SyncPRSummary handle the PR body instead
+
+- name: Sync PR summary
+  if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+  uses: TuringLang/actions/SyncPRSummary@main
+  with:
+    docs-content: |
+      MyPackage.jl docs for PR #${{ github.event.pull_request.number }}:
+      ${{ steps.docsdocumenter.outputs.preview_url }}
+```
+
+For a benchmarking workflow that also updates the Performance section:
+
+```yaml
+- name: Sync PR summary
+  uses: TuringLang/actions/SyncPRSummary@main
+  with:
+    perf-content: |
+      ```
+      ${{ steps.read-results.outputs.table }}
+      ```
+```
