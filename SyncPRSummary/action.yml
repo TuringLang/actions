@@ -22,91 +22,65 @@ runs:
         github-token: ${{ github.token }}
         script: |
           const START_MARKER = "<!-- managed-pr-summary:start -->";
-          const END_MARKER = "<!-- managed-pr-summary:end -->";
+          const END_MARKER   = "<!-- managed-pr-summary:end -->";
 
-          const sectionsConfig = [
+          const SECTIONS = [
             {
-              title: "Documentation Preview",
-              fallback: "_Pending. No docs preview comment found yet._",
-              input: process.env.INPUT_DOCS_CONTENT,
+              key:      "docs",
+              title:    "Documentation Preview",
+              input:    (process.env.INPUT_DOCS_CONTENT ?? "").trim(),
+              fallback: "_Pending. No docs preview available yet._",
             },
             {
-              marker: "<!-- perf-results -->",
-              title: "Performance",
-              fallback: "_Pending. No performance comment found yet._",
-              input: process.env.INPUT_PERF_CONTENT,
+              key:      "perf",
+              title:    "Performance",
+              input:    (process.env.INPUT_PERF_CONTENT ?? "").trim(),
+              fallback: "_Pending. No performance results available yet._",
             },
           ];
 
-          function extractManagedSections(body) {
-            const start = body.indexOf(START_MARKER);
-            const end = body.indexOf(END_MARKER);
-            if (start === -1 || end === -1 || end < start) return new Map();
-            const managedBlock = body.slice(start + START_MARKER.length, end).trim();
-
-            const sections = new Map();
-            const sectionRegex = /^### (.+)$/gm;
-            const matches = [...managedBlock.matchAll(sectionRegex)];
-            for (let i = 0; i < matches.length; i += 1) {
-              const title = matches[i][1];
-              const contentStart = matches[i].index + matches[i][0].length;
-              const contentEnd = i + 1 < matches.length ? matches[i + 1].index : managedBlock.length;
-              const content = managedBlock.slice(contentStart, contentEnd).trim();
-              if (content) sections.set(title, `### ${title}\n\n${content}`);
-            }
-            return sections;
+          function readSection(body, key) {
+            const open  = `<!-- section:${key} -->`;
+            const close = `<!-- /section:${key} -->`;
+            const s = body.indexOf(open);
+            const e = body.indexOf(close);
+            if (s === -1 || e === -1 || e <= s) return null;
+            return body.slice(s + open.length, e).trim();
           }
 
+          function buildBody(resolvedSections) {
+            const inner = resolvedSections
+              .map(({ key, title, content }) =>
+                `<!-- section:${key} -->\n### ${title}\n\n${content}\n<!-- /section:${key} -->`)
+              .join("\n\n");
+            return `${START_MARKER}\n## CI Summary — GitHub Actions\n\n${inner}\n${END_MARKER}`;
+          }
+
+          const { owner, repo } = context.repo;
           const prNumber = context.payload.pull_request.number;
-          const owner = context.repo.owner;
-          const repo = context.repo.repo;
 
-          const comments = await github.paginate(github.rest.issues.listComments, {
-            owner,
-            repo,
-            issue_number: prNumber,
-            per_page: 100,
+          const allComments = await github.paginate(github.rest.issues.listComments, {
+            owner, repo, issue_number: prNumber, per_page: 100,
           });
 
-          let managedComment = null;
-          const latestByMarker = new Map();
-
-          for (const comment of comments) {
-            const body = comment.body || "";
-            const user = comment.user?.login;
-            const app = comment.performed_via_github_app?.slug;
-            if (user !== "github-actions[bot]" && app !== "github-actions") continue;
-            if (!managedComment && body.includes(START_MARKER)) managedComment = comment;
-            for (const { marker, title } of sectionsConfig) {
-              if (!marker) continue;
-              if (!body.startsWith(marker)) continue;
-              const content = body.slice(marker.length).trim();
-              if (content) latestByMarker.set(marker, `### ${title}\n\n${content}`);
-            }
-          }
-
-          const existingSections = managedComment
-            ? extractManagedSections(managedComment.body || "")
-            : new Map();
-
-          const sections = sectionsConfig.map(({ marker, title, fallback, input }) => {
-            if (input) return `### ${title}\n\n${input.trim()}`;
-            return latestByMarker.get(marker) || existingSections.get(title) || `### ${title}\n\n${fallback}`;
+          const managedComment = allComments.find((c) => {
+            const user = c.user?.login;
+            const app  = c.performed_via_github_app?.slug;
+            const isBot = user === "github-actions[bot]" || app === "github-actions";
+            return isBot && (c.body || "").includes(START_MARKER);
           });
 
-          const newBody = [
-            START_MARKER,
-            "## CI Summary — GitHub Actions",
-            "",
-            ...sections,
-            END_MARKER,
-          ].join("\n\n");
+          const managedBody = managedComment?.body ?? "";
+
+          const resolvedSections = SECTIONS.map(({ key, title, input, fallback }) => ({
+            key,
+            title,
+            content: input || readSection(managedBody, key) || fallback,
+          }));
+
+          const newBody = buildBody(resolvedSections);
 
           if (managedComment) {
-            if (managedComment.body === newBody) {
-              core.info("PR summary already up to date.");
-              return;
-            }
             await github.rest.issues.updateComment({ owner, repo, comment_id: managedComment.id, body: newBody });
           } else {
             await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: newBody });
