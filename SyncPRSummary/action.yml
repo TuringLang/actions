@@ -1,13 +1,13 @@
 name: Sync PR Summary
-description: Update the managed PR summary block from workflow outputs and bot comments.
+description: Consolidate workflow outputs and bot comments into a single managed bot comment on the PR.
 
 inputs:
   docs-content:
-    description: Documentation preview content to inject into the PR summary.
+    description: Documentation preview content to inject into the managed bot comment.
     required: false
     default: ''
   perf-content:
-    description: Performance summary content to inject into the PR summary.
+    description: Performance summary content to inject into the managed bot comment.
     required: false
     default: ''
 
@@ -38,16 +38,11 @@ runs:
             },
           ];
 
-          function extractManagedBlock(body) {
+          function extractManagedSections(body) {
             const start = body.indexOf(START_MARKER);
             const end = body.indexOf(END_MARKER);
-            if (start === -1 || end === -1 || end < start) return "";
-            return body.slice(start + START_MARKER.length, end).trim();
-          }
-
-          function extractManagedSections(body) {
-            const managedBlock = extractManagedBlock(body);
-            if (!managedBlock) return new Map();
+            if (start === -1 || end === -1 || end < start) return new Map();
+            const managedBlock = body.slice(start + START_MARKER.length, end).trim();
 
             const sections = new Map();
             const sectionRegex = /^### (.+)$/gm;
@@ -62,26 +57,9 @@ runs:
             return sections;
           }
 
-          function replaceManagedBlock(body, managedBlock) {
-            const start = body.indexOf(START_MARKER);
-            const end = body.indexOf(END_MARKER);
-
-            if (start === -1 && end === -1) {
-              if (!body) return managedBlock;
-              if (body.endsWith("\n\n")) return `${body}${managedBlock}`;
-              if (body.endsWith("\n")) return `${body}\n${managedBlock}`;
-              return `${body}\n\n${managedBlock}`;
-            }
-            if (start !== -1 && (end === -1 || end < start)) return `${body.slice(0, start)}${managedBlock}`;
-            if (start === -1 && end !== -1) return `${managedBlock}${body.slice(end + END_MARKER.length)}`;
-            return `${body.slice(0, start)}${managedBlock}${body.slice(end + END_MARKER.length)}`;
-          }
-
           const prNumber = context.payload.pull_request.number;
           const owner = context.repo.owner;
           const repo = context.repo.repo;
-
-          const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
 
           const comments = await github.paginate(github.rest.issues.listComments, {
             owner,
@@ -90,8 +68,7 @@ runs:
             per_page: 100,
           });
 
-          const currentBody = pr.data.body || "";
-          const existingSections = extractManagedSections(currentBody);
+          let managedComment = null;
           const latestByMarker = new Map();
 
           for (const comment of comments) {
@@ -99,6 +76,7 @@ runs:
             const user = comment.user?.login;
             const app = comment.performed_via_github_app?.slug;
             if (user !== "github-actions[bot]" && app !== "github-actions") continue;
+            if (!managedComment && body.includes(START_MARKER)) managedComment = comment;
             for (const { marker, title } of sectionsConfig) {
               if (!marker) continue;
               if (!body.startsWith(marker)) continue;
@@ -107,23 +85,28 @@ runs:
             }
           }
 
+          const existingSections = managedComment
+            ? extractManagedSections(managedComment.body || "")
+            : new Map();
+
           const sections = sectionsConfig.map(({ marker, title, fallback, input }) => {
             if (input) return `### ${title}\n\n${input.trim()}`;
             return latestByMarker.get(marker) || existingSections.get(title) || `### ${title}\n\n${fallback}`;
           });
 
-          const managedBlock = [
+          const newBody = [
             START_MARKER,
             "## Automated PR Summary",
-            "",
             ...sections,
             END_MARKER,
           ].join("\n\n");
 
-          const updatedBody = replaceManagedBlock(currentBody, managedBlock);
-          if (updatedBody === currentBody) {
-            core.info("PR summary already up to date.");
-            return;
+          if (managedComment) {
+            if (managedComment.body === newBody) {
+              core.info("PR summary already up to date.");
+              return;
+            }
+            await github.rest.issues.updateComment({ owner, repo, comment_id: managedComment.id, body: newBody });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: newBody });
           }
-
-          await github.rest.pulls.update({ owner, repo, pull_number: prNumber, body: updatedBody });
