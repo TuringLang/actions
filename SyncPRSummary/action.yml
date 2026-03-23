@@ -96,7 +96,8 @@ runs:
 
           const newBody = [
             START_MARKER,
-            "## Automated PR Summary",
+            "## CI Summary — GitHub Actions",
+            "",
             ...sections,
             END_MARKER,
           ].join("\n\n");
