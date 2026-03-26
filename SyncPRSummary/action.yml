@@ -33,6 +33,7 @@ runs:
             },
             {
               key:      "perf",
+              marker:   "<!-- perf-results -->",
               title:    "Performance",
               input:    (process.env.INPUT_PERF_CONTENT ?? "").trim(),
               fallback: "_Pending. No performance results available yet._",
@@ -72,16 +73,36 @@ runs:
 
           const managedBody = managedComment?.body ?? "";
 
-          const resolvedSections = SECTIONS.map(({ key, title, input, fallback }) => ({
+          const latestByMarker = new Map();
+          for (const comment of allComments) {
+            const body = comment.body || "";
+            const user = comment.user?.login;
+            const app  = comment.performed_via_github_app?.slug;
+            const isBot = user === "github-actions[bot]" || app === "github-actions";
+            if (!isBot) continue;
+
+            for (const { marker, title } of SECTIONS) {
+              if (!marker) continue;
+              if (!body.startsWith(marker)) continue;
+              const content = body.slice(marker.length).trim();
+              if (content) latestByMarker.set(marker, content);
+            }
+          }
+
+          const resolvedSections = SECTIONS.map(({ key, marker, title, input, fallback }) => ({
             key,
             title,
-            content: input || readSection(managedBody, key) || fallback,
+            content: input || latestByMarker.get(marker) || readSection(managedBody, key) || fallback,
           }));
 
           const newBody = buildBody(resolvedSections);
 
           if (managedComment) {
-            await github.rest.issues.updateComment({ owner, repo, comment_id: managedComment.id, body: newBody });
+            if (managedComment.body !== newBody) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: managedComment.id, body: newBody });
+            } else {
+              core.info("PR summary already up to date.");
+            }
           } else {
             await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: newBody });
           }
