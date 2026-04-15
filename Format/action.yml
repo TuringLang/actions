@@ -3,15 +3,15 @@ author: 'TuringLang'
 description: 'Run JuliaFormatter on the repository'
 inputs:
   version:
-    description: 'Version of JuliaFormatter.jl. Examples: 2, 2.0, 2.1.0'
-    default: '2'
+    description: 'Version of JuliaFormatter.jl. Examples: 1, 1.0, 1.0.44'
+    default: '1'
   paths:
     description: 'A comma-separated list of paths (folders or files) to be formatted'
     default: '.'
   suggest-changes:
-    description: 'Whether to suggest changes on PRs. Defaults to true'
+    description: 'Whether to suggest changes on PRs. Defaults to false'
     required: false
-    default: 'true'
+    default: 'false'
 
 runs:
   using: "composite"
@@ -28,8 +28,8 @@ runs:
       shell: julia --color=yes {0}
       run: |
         import Pkg
-        _version_original = get(ENV, "jf-version", "2")
-        version = convert(String, strip(_version_original))::String
+        _version_original = get(ENV, "jf-version", "1")
+        version = convert(String, strip(_version_original))
         if isempty(version)
             error("The version input cannot be empty")
         end
