@@ -83,7 +83,9 @@ Run JuliaFormatter on the content in the repository.
 
 | Parameter | Description | Default |
 | --- | --- | --- |
-| `suggest-changes` | Whether to comment on PRs with suggested changes | `"true"` |
+| `version` | Version of JuliaFormatter.jl (e.g. `1`, `1.0`, `1.0.44`) | `"1"` |
+| `paths` | Comma-separated list of paths (folders or files) to format | `"."` |
+| `suggest-changes` | Whether to comment on PRs with suggested changes | `"false"` |
 
 ### Example usage
 

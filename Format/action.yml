@@ -2,27 +2,54 @@ name: 'Format'
 author: 'TuringLang'
 description: 'Run JuliaFormatter on the repository'
 inputs:
+  version:
+    description: 'Version of JuliaFormatter.jl. Examples: 1, 1.0, 1.0.44'
+    default: '1'
+  paths:
+    description: 'A comma-separated list of paths (folders or files) to be formatted'
+    default: '.'
   suggest-changes:
-    description: 'Whether to suggest changes on PRs. Defaults to true'
+    description: 'Whether to suggest changes on PRs. Defaults to false'
     required: false
-    default: 'true'
+    default: 'false'
 
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - uses: julia-actions/setup-julia@v2
       with:
         version: 1
 
-    - name: Format code
-      run: |
-        using Pkg
-        Pkg.add(; name="JuliaFormatter", version="1")
-        using JuliaFormatter
-        format("."; verbose=true)
+    - uses: julia-actions/cache@v3
+
+    - name: Install JuliaFormatter
       shell: julia --color=yes {0}
+      run: |
+        import Pkg
+        _version_original = get(ENV, "jf-version", "1")
+        version = convert(String, strip(_version_original))
+        if isempty(version)
+            error("The version input cannot be empty")
+        end
+        p = Pkg.PackageSpec(
+            name = "JuliaFormatter",
+            uuid = "98e50ef6-434e-11e9-1051-2b60c6c9e899",
+            version = version,
+        )
+        Pkg.add(p)
+      env:
+        jf-version: ${{ inputs.version }}
+
+    - name: Format code
+      shell: julia --color=yes {0}
+      run: |
+        import JuliaFormatter
+        paths = strip.(split(get(ENV, "jf-paths", "."), ","))
+        JuliaFormatter.format(paths; verbose=true)
+      env:
+        jf-paths: ${{ inputs.paths }}
 
     - name: Get JuliaFormatter version
       id: get-version
@@ -32,8 +59,18 @@ runs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
       shell: bash
 
+    - name: Check for formatting errors
+      shell: bash
+      run: |
+        output=$(git diff --name-only)
+        if [ "$output" != "" ]; then
+            >&2 echo "Some files have not been formatted !!!"
+            echo "$output"
+            exit 1
+        fi
+
     - uses: reviewdog/action-suggester@v1.22
-      if: ${{ inputs.suggest-changes && github.event_name == 'pull_request' }}
+      if: ${{ failure() && inputs.suggest-changes == 'true' && github.event_name == 'pull_request' }}
       with:
         tool_name: JuliaFormatter v${{ steps.get-version.outputs.version }}
-        fail_level: any
+        fail_level: error
