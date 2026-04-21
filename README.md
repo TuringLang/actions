@@ -77,14 +77,15 @@ See [`example_workflows/DocsNav.yml`](https://github.com/TuringLang/actions/blob
 
 ## Format
 
-Run JuliaFormatter on the content in the repository.
+Run a Julia code formatter on the content in the repository. Supports [JuliaFormatter.jl](https://github.com/domluna/JuliaFormatter.jl) and [Runic.jl](https://github.com/fredrikekre/Runic.jl).
 
 ### Parameters
 
 | Parameter | Description | Default |
 | --- | --- | --- |
-| `version` | Version of JuliaFormatter.jl (e.g. `1`, `1.0`, `1.0.44`) | `"1"` |
-| `paths` | Comma-separated list of paths (folders or files) to format | `"."` |
+| `formatter` | Formatter to use: `juliaformatter` or `runic` | `"juliaformatter"` |
+| `version` | Version of the formatter | `"1"` |
+| `paths` | Comma-separated list of paths to format (JuliaFormatter only) | `"."` |
 | `suggest-changes` | Whether to comment on PRs with suggested changes | `"false"` |
 
 ### Example usage
