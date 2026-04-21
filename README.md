@@ -85,7 +85,7 @@ Run a Julia code formatter on the content in the repository. Supports [JuliaForm
 | --- | --- | --- |
 | `formatter` | Formatter to use: `juliaformatter` or `runic` | `"juliaformatter"` |
 | `version` | Version of the formatter | `"1"` |
-| `paths` | Comma-separated list of paths to format (JuliaFormatter only) | `"."` |
+| `paths` | Comma-separated list of paths to format (JuliaFormatter only; ignored by Runic, which always checks all tracked `.jl` files — a warning is emitted if set) | `"."` |
 | `suggest-changes` | Whether to comment on PRs with suggested changes | `"false"` |
 
 ### Example usage

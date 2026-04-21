@@ -57,6 +57,11 @@ runs:
         jf-paths: ${{ inputs.paths }}
 
     # --- Runic ---
+    - name: Warn if paths used with Runic
+      if: ${{ inputs.formatter == 'runic' && inputs.paths != '.' }}
+      shell: bash
+      run: echo "::warning::The 'paths' input is ignored when using Runic. Runic always checks all tracked .jl files via git ls-files."
+
     - name: Install Runic
       if: ${{ inputs.formatter == 'runic' }}
       shell: julia --color=yes {0}
