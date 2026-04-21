@@ -102,7 +102,6 @@ runs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Check for formatting errors
-      id: check-formatting
       shell: bash
       run: |
         output=$(git diff --name-only)
@@ -113,8 +112,7 @@ runs:
         fi
 
     - uses: reviewdog/action-suggester@v1.22
-      if: ${{ steps.check-formatting.outcome == 'failure' && inputs.suggest-changes == 'true' && github.event_name == 'pull_request' }}
+      if: ${{ failure() && inputs.suggest-changes == 'true' && github.event_name == 'pull_request' }}
       with:
         tool_name: "${{ inputs.formatter == 'juliaformatter' && 'JuliaFormatter' || 'Runic' }} v${{ steps.get-version.outputs.version }}"
         fail_level: error
-        github_token: ${{ github.token }}
