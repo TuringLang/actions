@@ -116,3 +116,4 @@ runs:
       with:
         tool_name: "${{ inputs.formatter == 'juliaformatter' && 'JuliaFormatter' || 'Runic' }} v${{ steps.get-version.outputs.version }}"
         fail_level: error
+        filter_mode: nofilter
