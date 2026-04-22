@@ -9,7 +9,7 @@ inputs:
     description: 'Version of the formatter (JuliaFormatter: 1, 1.0, 1.0.44 | Runic: 1, 1.0, 1.0.1)'
     default: '1'
   paths:
-    description: 'Comma-separated list of paths to format (JuliaFormatter only; Runic checks all tracked .jl files)'
+    description: 'Comma-separated list of paths (folders or files) to format'
     default: '.'
   suggest-changes:
     description: 'Whether to suggest changes on PRs. Defaults to false'
