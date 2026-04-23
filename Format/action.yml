@@ -1,9 +1,12 @@
 name: 'Format'
 author: 'TuringLang'
-description: 'Run JuliaFormatter on the repository'
+description: 'Run a Julia code formatter on the repository'
 inputs:
+  formatter:
+    description: 'Formatter to use: juliaformatter or runic'
+    default: 'juliaformatter'
   version:
-    description: 'Version of JuliaFormatter.jl. Examples: 1, 1.0, 1.0.44'
+    description: 'Version of the formatter (JuliaFormatter: 1, 1.0, 1.0.44 | Runic: 1, 1.0, 1.0.1)'
     default: '1'
   paths:
     description: 'A comma-separated list of paths (folders or files) to be formatted'
@@ -24,7 +27,9 @@ runs:
 
     - uses: julia-actions/cache@v3
 
+    # --- JuliaFormatter ---
     - name: Install JuliaFormatter
+      if: ${{ inputs.formatter == 'juliaformatter' }}
       shell: julia --color=yes {0}
       run: |
         import Pkg
@@ -33,16 +38,16 @@ runs:
         if isempty(version)
             error("The version input cannot be empty")
         end
-        p = Pkg.PackageSpec(
+        Pkg.add(Pkg.PackageSpec(
             name = "JuliaFormatter",
             uuid = "98e50ef6-434e-11e9-1051-2b60c6c9e899",
             version = version,
-        )
-        Pkg.add(p)
+        ))
       env:
         jf-version: ${{ inputs.version }}
 
-    - name: Format code
+    - name: Format code (JuliaFormatter)
+      if: ${{ inputs.formatter == 'juliaformatter' }}
       shell: julia --color=yes {0}
       run: |
         import JuliaFormatter
@@ -51,13 +56,43 @@ runs:
       env:
         jf-paths: ${{ inputs.paths }}
 
-    - name: Get JuliaFormatter version
-      id: get-version
+    # --- Runic ---
+    - name: Install Runic
+      if: ${{ inputs.formatter == 'runic' }}
+      shell: julia --color=yes {0}
       run: |
-        VERSION=$(julia -e 'using Pkg; Pkg.status("JuliaFormatter")' | grep JuliaFormatter | sed 's/.* JuliaFormatter v//')
-        echo "JuliaFormatter version: $VERSION"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        import Pkg
+        _version_original = get(ENV, "runic-version", "1")
+        version = convert(String, strip(_version_original))
+        if isempty(version)
+            error("The version input cannot be empty")
+        end
+        Pkg.add(Pkg.PackageSpec(
+            name = "Runic",
+            uuid = "62bfec6d-59d7-401d-8490-b29ee721c001",
+            version = version,
+        ))
+      env:
+        runic-version: ${{ inputs.version }}
+
+    - name: Format code (Runic)
+      if: ${{ inputs.formatter == 'runic' }}
+      shell: julia --color=yes {0}
+      run: |
+        import Runic
+        paths = strip.(split(get(ENV, "runic-paths", "."), ","))
+        Runic.main(append!(["--inplace"], paths))
+      env:
+        runic-paths: ${{ inputs.paths }}
+
+    # --- Shared ---
+    - name: Get formatter version
+      id: get-version
       shell: bash
+      run: |
+        if [ "${{ inputs.formatter }}" = "juliaformatter" ]; then PKG="JuliaFormatter"; else PKG="Runic"; fi
+        VERSION=$(julia -e "using Pkg; Pkg.status(\"$PKG\")" | grep "$PKG" | sed "s/.* $PKG v//")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Check for formatting errors
       shell: bash
@@ -72,5 +107,5 @@ runs:
     - uses: reviewdog/action-suggester@v1.22
       if: ${{ failure() && inputs.suggest-changes == 'true' && github.event_name == 'pull_request' }}
       with:
-        tool_name: JuliaFormatter v${{ steps.get-version.outputs.version }}
+        tool_name: "${{ inputs.formatter == 'juliaformatter' && 'JuliaFormatter' || 'Runic' }} v${{ steps.get-version.outputs.version }}"
         fail_level: error
