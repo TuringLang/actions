@@ -71,15 +71,15 @@ runs:
   using: 'composite'
   steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Setup Julia
-      uses: julia-actions/setup-julia@v2
+      uses: julia-actions/setup-julia@v3
       with:
         version: ${{ inputs.julia-version }}
 
     - name: Cache Julia packages
-      uses: julia-actions/cache@v2
+      uses: julia-actions/cache@v3
 
     - name: Install docs dependencies
       shell: julia --color=yes --project=${{ inputs.doc-path }} {0}
