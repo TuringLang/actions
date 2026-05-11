@@ -36,6 +36,7 @@ If your `docs/make.jl` file contains a call to `deploydocs()`, it is not a big d
 | `julia-version`        | Julia version to use                                                                                           | `'1'`                                                |
 | `exclude-paths`        | JSON array of filepath patterns to exclude from navbar insertion                                               | `"[]"`                                               |
 | `deploy`               | Whether to deploy to the `gh-pages` branch or not                                                              | `true`                                               |
+| `use-vitepress`        | Use `DocumenterVitepress.deploydocs()` instead of `Documenter.deploydocs()`. Requires `DocumenterVitepress` in the docs `Project.toml`. | `false` |
 | `post-preview-comment` | Whether to post the sticky pull request preview comment after deployment                                       | `true`                                               |
 
 ### Outputs
