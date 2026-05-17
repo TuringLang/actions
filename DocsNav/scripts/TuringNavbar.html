@@ -25,23 +25,29 @@
     /* DocumenterVitepress CSS Overrides:
        Vitepress fixes its own nav and sidebar to the top of the viewport,
        which would overlap the TuringLang navbar inserted just inside <body>.
-       Push everything Vitepress-side down by --navbar-height so the two stack
-       cleanly. Only fires when these Vitepress classes are present, so it
-       has no effect on Documenter HTML output. */
-    .VPNav,
-    .VPNavBar,
-    .VPLocalNav,
-    .VPLocalNavOuterContainer {
+       Push the Vitepress-side fixed chrome down by --navbar-height so the
+       two stack cleanly. Only fires when these Vitepress classes are
+       present, so it has no effect on Documenter HTML output. */
+
+    /* `.VPNav` is the outer position:fixed container; its inner `.VPNavBar`
+       is position:relative, so shifting only the outer is correct (shifting
+       both would double-offset and create a gap). */
+    .VPNav {
         top: var(--navbar-height) !important;
     }
-    .VPSidebar {
-        padding-top: var(--navbar-height) !important;
+    /* Sidebar and mobile sticky local-nav are independently fixed at
+       top:var(--vp-nav-height); add --navbar-height so they clear both
+       the TuringLang navbar and Vitepress's own nav. */
+    .VPSidebar,
+    .VPLocalNav,
+    .VPLocalNavOuterContainer {
+        top: calc(var(--vp-nav-height, 64px) + var(--navbar-height)) !important;
     }
-    .VPContent.has-sidebar,
-    .VPContent.is-home,
-    .VPDoc,
-    .VPHome {
-        padding-top: var(--navbar-height) !important;
+    /* Page content already has padding-top to clear Vitepress's nav.
+       Add --navbar-height as a margin (additive) so it also clears
+       the TuringLang navbar above. */
+    .VPContent {
+        margin-top: var(--navbar-height);
     }
 
     /* When the rendered site is Vitepress (detected by .VPNavBar being in the
