@@ -22,6 +22,29 @@
     }
     /* End of Documenter.jl Tweaks */
 
+    /* DocumenterVitepress CSS Overrides:
+       Vitepress fixes its own nav and sidebar to the top of the viewport,
+       which would overlap the TuringLang navbar inserted just inside <body>.
+       Push everything Vitepress-side down by --navbar-height so the two stack
+       cleanly. Only fires when these Vitepress classes are present, so it
+       has no effect on Documenter HTML output. */
+    .VPNav,
+    .VPNavBar,
+    .VPLocalNav,
+    .VPLocalNavOuterContainer {
+        top: var(--navbar-height) !important;
+    }
+    .VPSidebar {
+        padding-top: var(--navbar-height) !important;
+    }
+    .VPContent.has-sidebar,
+    .VPContent.is-home,
+    .VPDoc,
+    .VPHome {
+        padding-top: var(--navbar-height) !important;
+    }
+    /* End of DocumenterVitepress Tweaks */
+
     /* Color and Font Variables */
     :root {
         --heading-color: #6c757d;
