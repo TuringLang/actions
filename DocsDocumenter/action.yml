@@ -116,6 +116,14 @@ runs:
     - name: Build docs
       shell: bash
       run: julia --project=${{ inputs.doc-path }} ${{ inputs.doc-make-path }}
+      # `DocumenterVitepress`'s writer calls `Documenter.deploy_folder(...)`
+      # at build time to decide the `bases` it writes to `build/bases.txt`.
+      # `deploy_folder` requires `GITHUB_TOKEN` to be present to recognise
+      # a CI build; without it the writer falls back to `all_ok=false`,
+      # `subfolder=""`, and the later deploy step finds an empty bases list
+      # and skips. Expose the token so PR-preview deploys work end-to-end.
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
       # We want to use the same version of DocsNav. In principle we would like
       # to write `uses: TuringLang/actions/DocsNav@${{ github.action_ref }}`,
