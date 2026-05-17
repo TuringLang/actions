@@ -22,32 +22,18 @@
     }
     /* End of Documenter.jl Tweaks */
 
-    /* DocumenterVitepress CSS Overrides:
-       Vitepress fixes its own nav and sidebar to the top of the viewport,
-       which would overlap the TuringLang navbar inserted just inside <body>.
-       Push the Vitepress-side fixed chrome down by --navbar-height so the
-       two stack cleanly. Only fires when these Vitepress classes are
-       present, so it has no effect on Documenter HTML output. */
-
-    /* `.VPNav` is the outer position:fixed container; its inner `.VPNavBar`
-       is position:relative, so shifting only the outer is correct (shifting
-       both would double-offset and create a gap). */
-    .VPNav {
-        top: var(--navbar-height) !important;
-    }
-    /* Sidebar and mobile sticky local-nav are independently fixed at
-       top:var(--vp-nav-height); add --navbar-height so they clear both
-       the TuringLang navbar and Vitepress's own nav. */
-    .VPSidebar,
-    .VPLocalNav,
-    .VPLocalNavOuterContainer {
-        top: calc(var(--vp-nav-height, 64px) + var(--navbar-height)) !important;
-    }
-    /* Page content already has padding-top to clear Vitepress's nav.
-       Add --navbar-height as a margin (additive) so it also clears
-       the TuringLang navbar above. */
-    .VPContent {
-        margin-top: var(--navbar-height);
+    /* DocumenterVitepress integration:
+       Vitepress's default theme already exposes `--vp-layout-top-height` as
+       the hook for adding banner-style chrome above its own nav. Every
+       layout-sensitive component (`.VPNav` `top`, `.VPContent` `margin`,
+       `.VPSidebar` `top`, `.VPLocalNav` `padding-top`, `.VPDocAside` `top`
+       and TOC `padding-top`) is already authored to add this variable to
+       its own offset, so binding it to the TuringLang navbar height makes
+       Vitepress reflow itself correctly with zero further intervention.
+       (`:has(.VPNavBar)` scopes this to Vitepress builds; Documenter HTML
+       sites are untouched.) */
+    html:has(.VPNavBar) {
+        --vp-layout-top-height: var(--navbar-height);
     }
 
     /* When the rendered site is Vitepress (detected by .VPNavBar being in the
