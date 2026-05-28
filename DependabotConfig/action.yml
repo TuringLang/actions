@@ -1,0 +1,47 @@
+name: 'DependabotConfig'
+author: 'TuringLang'
+description: 'Migrate TuringLang repositories from CompatHelper to Dependabot configuration'
+
+inputs:
+  target:
+    description: 'Target repo: inventory, all, or a single repo name'
+    default: 'inventory'
+  remove-compathelper:
+    description: 'Remove CompatHelper workflow if present'
+    default: 'true'
+  update-dependabot:
+    description: 'Create or update Dependabot config'
+    default: 'true'
+  branch-name:
+    description: 'Branch name to create/update in target repos'
+    default: 'dependabot-config'
+  dry-run:
+    description: 'Print planned changes only'
+    default: 'true'
+  inventory-path:
+    description: 'Path to the Dependabot repo inventory YAML file'
+    default: 'DependabotConfig/repo-inventory.yml'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: julia-actions/setup-julia@v3
+      with:
+        version: '1'
+
+    - name: Install Julia dependencies
+      shell: julia --color=yes {0}
+      run: |
+        import Pkg
+        Pkg.add("YAML")
+
+    - name: Run Dependabot configuration update
+      shell: bash
+      run: DependabotConfig/dependabot-config.sh
+      env:
+        TARGET: ${{ inputs.target }}
+        REMOVE_COMPATHELPER: ${{ inputs.remove-compathelper }}
+        UPDATE_DEPENDABOT: ${{ inputs.update-dependabot }}
+        BRANCH: ${{ inputs.branch-name }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        INVENTORY_PATH: ${{ inputs.inventory-path }}

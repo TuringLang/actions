@@ -1,0 +1,58 @@
+name: Dependabot config
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target repo: inventory, all, or a single repo name"
+        required: true
+        default: "inventory"
+      remove_compathelper:
+        description: "Remove CompatHelper workflow if present"
+        required: true
+        type: boolean
+        default: true
+      update_dependabot:
+        description: "Create or update Dependabot config"
+        required: true
+        type: boolean
+        default: true
+      branch_name:
+        description: "Branch name to create/update in target repos"
+        required: true
+        default: "dependabot-config"
+      dry_run:
+        description: "Print planned changes only"
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  dependabot-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout actions repository
+        uses: actions/checkout@v6
+
+      - name: Configure git identity
+        shell: bash
+        run: |
+          git config --global user.name "shravanngoswamii"
+          git config --global user.email "shravanngoswamii@users.noreply.github.com"
+
+      - name: Verify GitHub CLI authentication
+        shell: bash
+        run: gh auth status
+        env:
+          GH_TOKEN: ${{ secrets.SHRAVAN_GH_TOKEN }}
+
+      - name: Run Dependabot configuration
+        uses: ./DependabotConfig
+        with:
+          target: ${{ inputs.target }}
+          remove-compathelper: ${{ inputs.remove_compathelper }}
+          update-dependabot: ${{ inputs.update_dependabot }}
+          branch-name: ${{ inputs.branch_name }}
+          dry-run: ${{ inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.SHRAVAN_GH_TOKEN }}
