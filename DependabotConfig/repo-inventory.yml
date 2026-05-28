@@ -1,0 +1,39 @@
+# Editable inventory for the Dependabot configuration rollout.
+# Start small, verify the generated PRs, then add more TuringLang repositories.
+defaults:
+  remove_compathelper: true
+  update_dependabot: true
+  dependabot:
+    enable_beta_ecosystems: true
+    github_actions:
+      enabled: true
+      interval: weekly
+    julia:
+      enabled: true
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+      group_all: true
+    npm:
+      enabled: false
+      interval: weekly
+      group_all: true
+
+repositories:
+  - name: NormalizingFlows.jl
+    package_directories:
+      - "/"
+
+  - name: AdvancedMH.jl
+    package_directories:
+      - "/"
+
+  - name: JuliaBUGS.jl
+    package_directories:
+      - "/JuliaBUGS"
+    npm_directories:
+      - "/DoodleBUGS"
+    dependabot:
+      npm:
+        enabled: true
