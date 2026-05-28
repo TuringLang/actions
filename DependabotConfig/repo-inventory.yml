@@ -4,7 +4,6 @@ defaults:
   remove_compathelper: true
   update_dependabot: true
   dependabot:
-    enable_beta_ecosystems: true
     github_actions:
       enabled: true
       interval: weekly
@@ -19,18 +18,22 @@ defaults:
       enabled: false
       interval: weekly
       group_all: true
+    cargo:
+      enabled: false
+      interval: weekly
+      group_all: true
 
 repositories:
   - name: NormalizingFlows.jl
-    package_directories:
+    julia_directories:
       - "/"
 
   - name: AdvancedMH.jl
-    package_directories:
+    julia_directories:
       - "/"
 
   - name: JuliaBUGS.jl
-    package_directories:
+    julia_directories:
       - "/JuliaBUGS"
     npm_directories:
       - "/DoodleBUGS"

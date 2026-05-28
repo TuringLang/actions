@@ -1,0 +1,27 @@
+version: 2
+
+updates:
+<% updates.forEach(function(update, updateIndex) { -%>
+<% if (updateIndex > 0) { -%>
+
+<% } -%>
+  - package-ecosystem: "<%= update.ecosystem %>"
+<% if (update.directories.length === 1) { -%>
+    directory: "<%= update.directories[0] %>"
+<% } else { -%>
+    directories:
+<% update.directories.forEach(function(directory) { -%>
+      - "<%= directory %>"
+<% }); -%>
+<% } -%>
+    schedule:
+<% Object.entries(update.schedule).forEach(function(entry) { -%>
+      <%= entry[0] %>: "<%= entry[1] %>"
+<% }); -%>
+<% if (update.groupAll) { -%>
+    groups:
+      all-<%= update.groupName %>-packages:
+        patterns:
+          - "*"
+<% } -%>
+<% }); -%>

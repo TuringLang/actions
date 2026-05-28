@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "Target repo: inventory, all, or a single repo name"
+        description: "Target repo: inventory or a single repo name"
         required: true
         default: "inventory"
       remove_compathelper:

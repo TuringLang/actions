@@ -174,12 +174,13 @@ For a benchmarking workflow that also updates the Performance section:
 ## DependabotConfig
 
 Create pull requests that migrate TuringLang repositories from CompatHelper workflows to Dependabot configuration.
+The generated Dependabot file uses `DependabotConfig/dependabot.yml.ejs` and repository settings from `DependabotConfig/repo-inventory.yml`.
 
 ### Parameters
 
 | Parameter | Description | Default |
 | --- | --- | --- |
-| `target` | `inventory`, `all`, or a single repository name | `inventory` |
+| `target` | `inventory` or a single repository name | `inventory` |
 | `remove-compathelper` | Remove CompatHelper workflow files when present | `true` |
 | `update-dependabot` | Create or update Dependabot configuration | `true` |
 | `branch-name` | Branch to create or update in target repositories | `dependabot-config` |

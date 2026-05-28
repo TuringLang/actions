@@ -4,7 +4,7 @@ description: 'Migrate TuringLang repositories from CompatHelper to Dependabot co
 
 inputs:
   target:
-    description: 'Target repo: inventory, all, or a single repo name'
+    description: 'Target repo: inventory or a single repo name'
     default: 'inventory'
   remove-compathelper:
     description: 'Remove CompatHelper workflow if present'
@@ -25,15 +25,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: julia-actions/setup-julia@v3
+    - uses: actions/setup-node@v6
       with:
-        version: '1'
+        node-version: '24'
 
-    - name: Install Julia dependencies
-      shell: julia --color=yes {0}
-      run: |
-        import Pkg
-        Pkg.add("YAML")
+    - name: Install generator dependencies
+      shell: bash
+      run: npm ci --prefix DependabotConfig
 
     - name: Run Dependabot configuration update
       shell: bash
