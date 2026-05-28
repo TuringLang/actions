@@ -28,3 +28,12 @@ repositories:
   - name: AdvancedMH.jl
     package_directories:
       - "/"
+
+  - name: JuliaBUGS.jl
+    package_directories:
+      - "/JuliaBUGS"
+    npm_directories:
+      - "/DoodleBUGS"
+    dependabot:
+      npm:
+        enabled: true
