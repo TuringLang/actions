@@ -10,7 +10,6 @@ Namely, these are:
 - [PRAssign](#prassign)
 - [Search](#search)
 - [SyncPRSummary](#syncprsummary)
-- [DependabotConfig](#dependabotconfig)
 
 ----------
 
@@ -168,25 +167,3 @@ For a benchmarking workflow that also updates the Performance section:
       ${{ steps.read-results.outputs.table }}
       ```
 ```
-
-----------------
-
-## DependabotConfig
-
-Create pull requests that migrate TuringLang repositories from CompatHelper workflows to Dependabot configuration.
-The generated Dependabot file uses `DependabotConfig/dependabot.yml.ejs` and repository settings from `DependabotConfig/repo-inventory.yml`.
-
-### Parameters
-
-| Parameter | Description | Default |
-| --- | --- | --- |
-| `target` | `inventory` or a single repository name | `inventory` |
-| `remove-compathelper` | Remove CompatHelper workflow files when present | `true` |
-| `update-dependabot` | Create or update Dependabot configuration | `true` |
-| `branch-name` | Branch to create or update in target repositories | `dependabot-config` |
-| `dry-run` | Print planned changes without cloning, pushing, or creating pull requests | `true` |
-| `inventory-path` | Path to the repository inventory YAML file | `DependabotConfig/repo-inventory.yml` |
-
-### Example usage
-
-See [`.github/workflows/dependabot-config.yml`](https://github.com/TuringLang/actions/blob/main/.github/workflows/dependabot-config.yml) for an example workflow.
