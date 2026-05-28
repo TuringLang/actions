@@ -1,8 +1,0 @@
-{
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "ejs": "^6.0.1",
-    "js-yaml": "^4.1.1"
-  }
-}
