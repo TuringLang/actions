@@ -10,7 +10,7 @@ BRANCH="${BRANCH:-dependabot-config}"
 DRY_RUN="${DRY_RUN:-true}"
 INVENTORY_PATH="${INVENTORY_PATH:-DependabotConfig/repo-inventory.yml}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GENERATOR="${SCRIPT_DIR}/generate-dependabot.jl"
+GENERATOR="${SCRIPT_DIR}/generate-dependabot.mjs"
 
 if [[ -z "${GH_TOKEN:-}" ]]; then
     echo "error: GH_TOKEN is required" >&2
@@ -36,21 +36,13 @@ repo_full_name() {
 }
 
 inventory_repos() {
-    julia "$GENERATOR" --inventory "$INVENTORY_PATH" --list-repos
-}
-
-all_repos() {
-    gh repo list "$ORG" --limit 1000 --json name,isArchived \
-        -q '.[] | select(.isArchived == false) | .name'
+    node "$GENERATOR" --inventory "$INVENTORY_PATH" --list-repos
 }
 
 target_repos() {
     case "$TARGET" in
         inventory)
             inventory_repos
-            ;;
-        all)
-            all_repos
             ;;
         *)
             repo_short_name "$TARGET"
@@ -61,7 +53,7 @@ target_repos() {
 setting_value() {
     local repo="$1"
     local key="$2"
-    julia "$GENERATOR" --inventory "$INVENTORY_PATH" --describe "$repo" \
+    node "$GENERATOR" --inventory "$INVENTORY_PATH" --describe "$repo" \
         | awk -F= -v key="$key" '$1 == key { print $2 }'
 }
 
@@ -110,11 +102,14 @@ write_pr_body() {
     local dependabot_added="$3"
     local dependabot_updated="$4"
     local normalized_yaml="$5"
-    local package_directories="$6"
+    local julia_directories="$6"
     local julia_group_all="$7"
     local npm_directories="$8"
     local npm_enabled="$9"
     local npm_group_all="${10}"
+    local cargo_directories="${11}"
+    local cargo_enabled="${12}"
+    local cargo_group_all="${13}"
 
     {
         echo "## Summary"
@@ -128,9 +123,12 @@ write_pr_body() {
         if [[ -n "$EXISTING_DEPENDABOT_PATH" ]]; then
             echo "- Existing Dependabot path: \`${EXISTING_DEPENDABOT_PATH}\`"
         fi
-        echo "- Julia package directories: ${package_directories}"
+        echo "- Julia package directories: ${julia_directories}"
         if bool_is_true "$npm_enabled"; then
             echo "- npm package directories: ${npm_directories}"
+        fi
+        if bool_is_true "$cargo_enabled"; then
+            echo "- Cargo package directories: ${cargo_directories}"
         fi
         echo
         echo "## Changes made"
@@ -148,16 +146,23 @@ write_pr_body() {
             echo "- Normalized \`.github/dependabot.yaml\` to \`.github/dependabot.yml\`."
         fi
         echo
-        if bool_is_true "$npm_enabled"; then
+        if bool_is_true "$npm_enabled" && bool_is_true "$cargo_enabled"; then
+            echo "Julia, npm, Cargo, and GitHub Actions dependency updates are configured to run weekly."
+        elif bool_is_true "$npm_enabled"; then
             echo "Julia, npm, and GitHub Actions dependency updates are configured to run weekly."
+        elif bool_is_true "$cargo_enabled"; then
+            echo "Julia, Cargo, and GitHub Actions dependency updates are configured to run weekly."
         else
             echo "Julia and GitHub Actions dependency updates are configured to run weekly."
         fi
         if bool_is_true "$julia_group_all"; then
             echo "Julia package updates are grouped into a single Dependabot PR."
         fi
-        if bool_is_true "$npm_group_all"; then
+        if bool_is_true "$npm_enabled" && bool_is_true "$npm_group_all"; then
             echo "npm package updates are grouped into a single Dependabot PR."
+        fi
+        if bool_is_true "$cargo_enabled" && bool_is_true "$cargo_group_all"; then
+            echo "Cargo package updates are grouped into a single Dependabot PR."
         fi
     } > "$body_file"
 }
@@ -165,38 +170,48 @@ write_pr_body() {
 dry_run_repo() {
     local repo="$1"
     local full_repo
-    local package_directories
+    local julia_directories
     local github_actions_enabled
     local julia_enabled
     local julia_group_all
     local npm_directories
     local npm_enabled
     local npm_group_all
-    local enable_beta_ecosystems
+    local cargo_directories
+    local cargo_enabled
+    local cargo_group_all
 
     full_repo="$(repo_full_name "$repo")"
-    package_directories="$(setting_value "$repo" package_directories)"
+    julia_directories="$(setting_value "$repo" julia_directories)"
     github_actions_enabled="$(setting_value "$repo" github_actions_enabled)"
     julia_enabled="$(setting_value "$repo" julia_enabled)"
     julia_group_all="$(setting_value "$repo" julia_group_all)"
     npm_directories="$(setting_value "$repo" npm_directories)"
     npm_enabled="$(setting_value "$repo" npm_enabled)"
     npm_group_all="$(setting_value "$repo" npm_group_all)"
-    enable_beta_ecosystems="$(setting_value "$repo" enable_beta_ecosystems)"
+    cargo_directories="$(setting_value "$repo" cargo_directories)"
+    cargo_enabled="$(setting_value "$repo" cargo_enabled)"
+    cargo_group_all="$(setting_value "$repo" cargo_group_all)"
 
     echo
     echo "DRY RUN: ${full_repo}"
     echo "  remove CompatHelper: ${REMOVE_COMPATHELPER}"
     echo "  update Dependabot: ${UPDATE_DEPENDABOT}"
     echo "  branch: ${BRANCH}"
-    echo "  package directories: ${package_directories}"
+    echo "  Julia directories: ${julia_directories}"
     echo "  GitHub Actions updates enabled: ${github_actions_enabled}"
     echo "  Julia updates enabled: ${julia_enabled}"
     echo "  grouped Julia updates: ${julia_group_all}"
     echo "  npm directories: ${npm_directories:-none}"
     echo "  npm updates enabled: ${npm_enabled}"
-    echo "  grouped npm updates: ${npm_group_all}"
-    echo "  enable beta ecosystems: ${enable_beta_ecosystems}"
+    if bool_is_true "$npm_enabled"; then
+        echo "  grouped npm updates: ${npm_group_all}"
+    fi
+    echo "  Cargo directories: ${cargo_directories:-none}"
+    echo "  Cargo updates enabled: ${cargo_enabled}"
+    if bool_is_true "$cargo_enabled"; then
+        echo "  grouped Cargo updates: ${cargo_group_all}"
+    fi
 }
 
 process_repo() {
@@ -205,11 +220,14 @@ process_repo() {
     local full_repo
     local default_branch
     local repo_dir
-    local package_directories
+    local julia_directories
     local julia_group_all
     local npm_directories
     local npm_enabled
     local npm_group_all
+    local cargo_directories
+    local cargo_enabled
+    local cargo_group_all
     local dependabot_added="false"
     local dependabot_updated="false"
     local compat_removed="false"
@@ -250,7 +268,7 @@ process_repo() {
     if bool_is_true "$UPDATE_DEPENDABOT"; then
         mkdir -p "${repo_dir}/.github"
         generated_dependabot="${WORKDIR}/${short_repo}-dependabot.yml"
-        julia "$GENERATOR" --inventory "$INVENTORY_PATH" "$short_repo" > "$generated_dependabot"
+        node "$GENERATOR" --inventory "$INVENTORY_PATH" "$short_repo" > "$generated_dependabot"
 
         if [[ "$DEPENDABOT_BEFORE" == "missing" ]]; then
             dependabot_added="true"
@@ -273,14 +291,17 @@ process_repo() {
         return
     fi
 
-    package_directories="$(setting_value "$short_repo" package_directories)"
+    julia_directories="$(setting_value "$short_repo" julia_directories)"
     julia_group_all="$(setting_value "$short_repo" julia_group_all)"
     npm_directories="$(setting_value "$short_repo" npm_directories)"
     npm_enabled="$(setting_value "$short_repo" npm_enabled)"
     npm_group_all="$(setting_value "$short_repo" npm_group_all)"
+    cargo_directories="$(setting_value "$short_repo" cargo_directories)"
+    cargo_enabled="$(setting_value "$short_repo" cargo_enabled)"
+    cargo_group_all="$(setting_value "$short_repo" cargo_group_all)"
     title="$(pr_title "$compat_removed" "$dependabot_added" "$dependabot_updated")"
     body_file="${WORKDIR}/${short_repo}-pr-body.md"
-    write_pr_body "$body_file" "$compat_removed" "$dependabot_added" "$dependabot_updated" "$normalized_yaml" "$package_directories" "$julia_group_all" "$npm_directories" "$npm_enabled" "$npm_group_all"
+    write_pr_body "$body_file" "$compat_removed" "$dependabot_added" "$dependabot_updated" "$normalized_yaml" "$julia_directories" "$julia_group_all" "$npm_directories" "$npm_enabled" "$npm_group_all" "$cargo_directories" "$cargo_enabled" "$cargo_group_all"
 
     git -C "$repo_dir" add .github
     git -C "$repo_dir" commit -m "$title"
@@ -302,6 +323,12 @@ process_repo() {
 
 main() {
     local repos
+
+    if [[ "$TARGET" == "all" ]]; then
+        echo "error: TARGET=all is not supported. Use TARGET=inventory or a single repo name." >&2
+        exit 2
+    fi
+
     mapfile -t repos < <(target_repos)
 
     if [[ "${#repos[@]}" -eq 0 ]]; then
