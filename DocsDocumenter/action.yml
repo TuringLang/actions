@@ -54,6 +54,10 @@ inputs:
     description: 'Whether to deploy the docs to the gh-pages branch'
     required: false
     default: 'true'
+  use-vitepress:
+    description: 'Whether to use DocumenterVitepress.deploydocs() instead of Documenter.deploydocs() for deployment. Requires DocumenterVitepress to be listed in the docs Project.toml.'
+    required: false
+    default: 'false'
   post-preview-comment:
     description: 'Whether to post a pull request preview comment after deployment'
     required: false
@@ -112,6 +116,14 @@ runs:
     - name: Build docs
       shell: bash
       run: julia --project=${{ inputs.doc-path }} ${{ inputs.doc-make-path }}
+      # `DocumenterVitepress`'s writer calls `Documenter.deploy_folder(...)`
+      # at build time to decide the `bases` it writes to `build/bases.txt`.
+      # `deploy_folder` requires `GITHUB_TOKEN` to be present to recognise
+      # a CI build; without it the writer falls back to `all_ok=false`,
+      # `subfolder=""`, and the later deploy step finds an empty bases list
+      # and skips. Expose the token so PR-preview deploys work end-to-end.
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
       # We want to use the same version of DocsNav. In principle we would like
       # to write `uses: TuringLang/actions/DocsNav@${{ github.action_ref }}`,
@@ -142,8 +154,14 @@ runs:
       # Must pass `root` when `deploydocs()` is run from outside make.jl file
       # Also, `root` must be an absolute path (hence the call to `pwd()`)
       run: |
-        using Documenter
-        deploydocs(; root=pwd(), repo="github.com/${{ github.repository }}.git", dirname="${{ inputs.dirname }}", tag_prefix="${{ inputs.tag_prefix }}", push_preview=true)
+        use_vitepress = "${{ inputs.use-vitepress }}" == "true"
+        if use_vitepress
+            using DocumenterVitepress
+            DocumenterVitepress.deploydocs(; root=pwd(), repo="github.com/${{ github.repository }}.git", dirname="${{ inputs.dirname }}", tag_prefix="${{ inputs.tag_prefix }}", push_preview=true)
+        else
+            using Documenter
+            deploydocs(; root=pwd(), repo="github.com/${{ github.repository }}.git", dirname="${{ inputs.dirname }}", tag_prefix="${{ inputs.tag_prefix }}", push_preview=true)
+        end
       env:
         GITHUB_TOKEN: ${{ github.token }}
         JULIA_DEBUG: Documenter
