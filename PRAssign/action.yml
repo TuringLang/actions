@@ -17,7 +17,9 @@ runs:
         shell: bash
         run: |
           AUTHOR=$(gh pr view ${PR_NUMBER} --json author -q .author.login)
+          IS_BOT=$(gh pr view ${PR_NUMBER} --json author -q .author.is_bot)
           echo "author=${AUTHOR}" >> $GITHUB_OUTPUT
+          echo "is_bot=${IS_BOT}" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.number.outputs.number }}
@@ -25,8 +27,15 @@ runs:
       - name: Assign PR author
         shell: bash
         run: |
+          # Bots report a login such as `app/dependabot`, which is not an
+          # assignable actor, so assigning one fails the whole workflow.
+          if [ "${IS_BOT}" = "true" ]; then
+            echo "PR author ${PR_AUTHOR} is a bot, skipping assignment"
+            exit 0
+          fi
           gh pr edit ${PR_NUMBER} --add-assignee ${PR_AUTHOR}
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.number.outputs.number }}
           PR_AUTHOR: ${{ steps.author.outputs.author }}
+          IS_BOT: ${{ steps.author.outputs.is_bot }}
